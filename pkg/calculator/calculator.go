@@ -123,6 +123,7 @@ func MolarMassCompound(inStr string, molarMassMap map[string]float64) map[string
 
 					e.Mass = float64(e.Count) * e.Mass
 					//fmt.Printf("Масса %s в соединении г/моль: %.4f г\n", e.Symbol, e.Mass)
+					molarMassMap[e.Symbol] = e.Mass
 				} else {
 					e.MassInCompound += e.Mass
 				}
