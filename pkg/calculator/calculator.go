@@ -8,7 +8,7 @@ type Element struct {
 }
 
 // MolarMasses Создание карты с химическими элементами и их молярными массами
-var MolarMasses = map[string]float64{
+var molarMasses = map[string]float64{
 	"H":  1.0081,
 	"He": 4.0026,
 	"Li": 6.94,
@@ -106,4 +106,53 @@ var MolarMasses = map[string]float64{
 	"Md": 258.00,
 	"No": 259.00,
 	"Lr": 262.00,
+}
+
+func MolarMassCompound(inStr string, molarMassMap map[string]float64) map[string]float64 {
+	e := Element{}
+
+	for _, v := range inStr {
+		if v >= 'A' && v <= 'Z' {
+			if e.Symbol != "" {
+				e.Mass = molarMasses[e.Symbol]
+				//fmt.Printf("Молярная масса г/моль %s: %.4f\n", e.Symbol, e.Mass)
+				molarMassMap[e.Symbol] = e.Mass
+
+				if e.Count != 0 {
+					//fmt.Printf("Количество %s в соединении: %d\n", e.Symbol, e.Count)
+
+					e.Mass = float64(e.Count) * e.Mass
+					//fmt.Printf("Масса %s в соединении г/моль: %.4f г\n", e.Symbol, e.Mass)
+				} else {
+					e.MassInCompound += e.Mass
+				}
+			}
+			// Сбрасываем значения для нового элемента
+			e.Symbol = string(v)
+			e.Count = 0
+		} else if v >= '0' && v <= '9' {
+			e.Count = e.Count*10 + int(v-'0')
+		}
+	}
+
+	// Обработка последнего элемента
+	if e.Symbol != "" {
+		e.Mass = molarMasses[e.Symbol]
+		//fmt.Printf("Молярная масса г/моль %s: %.4f\n", e.Symbol, e.Mass)
+
+		if e.Count != 0 {
+			//fmt.Printf("Количество %s в соединении: %d\n", e.Symbol, e.Count)
+
+			// Учитываем количество атомов в молекуле при вычислении общей молярной массы
+			massForElement := float64(e.Count) * e.Mass
+			//fmt.Printf("Масса %s в соединении г/моль: %.4f г\n", e.Symbol, massForElement)
+			molarMassMap[e.Symbol] = massForElement
+			e.MassInCompound += massForElement
+
+			molarMassMap["common"] = e.MassInCompound
+		}
+	}
+
+	//fmt.Printf("Общая молярная масса г/моль: %.4f г\n", e.MassInCompound)
+	return molarMassMap
 }
