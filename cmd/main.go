@@ -12,7 +12,6 @@ import (
 	"syscall"
 	"time"
 	"udo_mass/pkg/api"
-	"udo_mass/pkg/calculator"
 	"udo_mass/pkg/middl"
 )
 
@@ -30,19 +29,19 @@ func init() {
 }
 
 func main() {
-	inStr := "KH2PO4"
+	//inStr := "KH2PO4"
 
 	fmt.Println("// -------------------------------------------------------------------------")
 
-	// Создаем и заполняем карту молярных масс
-	molarMassMap := make(map[string]float64)
-	massMap := calculator.MolarMassCompound(inStr, molarMassMap)
-
-	for symbol, mass := range massMap {
-		fmt.Printf("%s: %.4f г/моль\n", symbol, mass)
-	}
-
-	fmt.Println(massMap)
+	//// Создаем и заполняем карту молярных масс
+	//molarMassMap := make(map[string]float64)
+	//massMap := calculator.MolarMassCompound(molarMassMap)
+	//
+	//for symbol, mass := range massMap {
+	//	fmt.Printf("%s: %.4f г/моль\n", symbol, mass)
+	//}
+	//
+	//fmt.Println(massMap)
 
 	fmt.Println("// -------------------------------------------------------------------------")
 

@@ -1,5 +1,12 @@
 package calculator
 
+import (
+	"fmt"
+	"strconv"
+	"strings"
+	"unicode"
+)
+
 type Element struct {
 	Symbol         string
 	Mass           float64
@@ -108,52 +115,40 @@ var molarMasses = map[string]float64{
 	"Lr": 262.00,
 }
 
-func MolarMassCompound(inStr string, molarMassMap map[string]float64) map[string]float64 {
-	e := Element{}
+// CombineChemicalFormulas Объединяет строковые значения элементов и атомов
+func CombineChemicalFormulas(formulas ...string) map[string]float64 {
+	formula := strings.Join(formulas, "")
+	charCount := make(map[string]int)
 
-	for _, v := range inStr {
-		if v >= 'A' && v <= 'Z' {
-			if e.Symbol != "" {
-				e.Mass = molarMasses[e.Symbol]
-				//fmt.Printf("Молярная масса г/моль %s: %.4f\n", e.Symbol, e.Mass)
-				molarMassMap[e.Symbol] = e.Mass
-
-				if e.Count != 0 {
-					//fmt.Printf("Количество %s в соединении: %d\n", e.Symbol, e.Count)
-
-					e.Mass = float64(e.Count) * e.Mass
-					//fmt.Printf("Масса %s в соединении г/моль: %.4f г\n", e.Symbol, e.Mass)
-					molarMassMap[e.Symbol] = e.Mass
-				} else {
-					e.MassInCompound += e.Mass
-				}
-			}
-			// Сбрасываем значения для нового элемента
-			e.Symbol = string(v)
-			e.Count = 0
-		} else if v >= '0' && v <= '9' {
-			e.Count = e.Count*10 + int(v-'0')
+	for i, char := range formula {
+		if !unicode.IsDigit(char) {
+			charCount[string(char)]++
+		} else {
+			digit, _ := strconv.Atoi(string(char))
+			el := formula[i-1]
+			charCount[string(el)] += digit - 1
 		}
 	}
 
-	// Обработка последнего элемента
-	if e.Symbol != "" {
-		e.Mass = molarMasses[e.Symbol]
-		//fmt.Printf("Молярная масса г/моль %s: %.4f\n", e.Symbol, e.Mass)
+	mass := molarMassCompound(charCount)
 
-		if e.Count != 0 {
-			//fmt.Printf("Количество %s в соединении: %d\n", e.Symbol, e.Count)
+	return mass
+}
 
-			// Учитываем количество атомов в молекуле при вычислении общей молярной массы
-			massForElement := float64(e.Count) * e.Mass
-			//fmt.Printf("Масса %s в соединении г/моль: %.4f г\n", e.Symbol, massForElement)
-			molarMassMap[e.Symbol] = massForElement
-			e.MassInCompound += massForElement
+// MolarMassCompound Посчитывает малярную массу каждого элемента
+func molarMassCompound(charCount map[string]int) map[string]float64 {
+	compoundMasses := make(map[string]float64)
+	totalMass := 0.0
 
-			molarMassMap["common"] = e.MassInCompound
+	for element, count := range charCount {
+		if mass, found := molarMasses[element]; found {
+			massForElement := mass * float64(count)
+			compoundMasses[element] = massForElement
+			totalMass += massForElement
+		} else {
+			fmt.Printf("Не удалось найти молекулярную массу для элемента %s\n", element)
 		}
 	}
-
-	//fmt.Printf("Общая молярная масса г/моль: %.4f г\n", e.MassInCompound)
-	return molarMassMap
+	compoundMasses["total"] = totalMass
+	return compoundMasses
 }
