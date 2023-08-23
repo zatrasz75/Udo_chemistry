@@ -1,5 +1,10 @@
 // js.js
 function calculateMolarMasses() {
+    const nitrateMass = document.getElementById('nitrate_mass').value;
+    const phosphateMass = document.getElementById('phosphate_mass').value;
+    const potassiumMass = document.getElementById('potassium_mass').value;
+    const microMass = document.getElementById('micro_mass').value;
+
     const nitrate = document.getElementById('nitrate').value;
     const phosphate = document.getElementById('phosphate').value;
     const potassium = document.getElementById('potassium').value;
@@ -9,11 +14,15 @@ function calculateMolarMasses() {
         nitrate: nitrate,
         phosphate: phosphate,
         potassium: potassium,
-        micro: micro
+        micro: micro,
+        nitrate_mass: nitrateMass,
+        phosphate_mass: phosphateMass,
+        potassium_mass: potassiumMass,
+        micro_mass: microMass
     };
 
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/calculateMolarMasses", true);
+    xhr.open("POST", "/", true);
     xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 
     xhr.onreadystatechange = function () {

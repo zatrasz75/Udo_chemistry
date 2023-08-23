@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"io/ioutil"
-	"log"
 	"log/slog"
 	"net/http"
 	"path/filepath"
@@ -43,22 +42,22 @@ func New(webRoot string) *API {
 // Регистрация обработчиков API.
 func (api *API) endpoints() {
 	api.r.HandleFunc("/", api.home).Methods(http.MethodGet)
-	api.r.HandleFunc("/calculateMolarMasses", api.calculateMolarMasses).Methods(http.MethodPost)
+	api.r.HandleFunc("/", api.calculateMolarMasses).Methods(http.MethodPost)
 
 	// веб-приложение
-	api.r.PathPrefix("/web/").Handler(http.StripPrefix("/web/", http.FileServer(http.Dir("./web"))))
+	api.r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./web/static"))))
 }
 
 // Обработчик для статических файлов веб-приложения.
 func (api *API) serveWebFiles(w http.ResponseWriter, r *http.Request) {
 	filePath := r.URL.Path
-	// Проверяем, что запрошенный путь начинается с "/web/".
-	if !strings.HasPrefix(filePath, "/web/") {
+	// Проверяем, что запрошенный путь начинается с "/static/".
+	if !strings.HasPrefix(filePath, "/static/") {
 		http.NotFound(w, r)
 		return
 	}
 
-	// Проверяем, что путь после "/web/" не содержит "../" (попытка обхода пути).
+	// Проверяем, что путь после "/static/" не содержит "../" (попытка обхода пути).
 	if strings.Contains(filePath, "../") {
 		http.NotFound(w, r)
 		return
@@ -85,7 +84,7 @@ func (api *API) home(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 	}
 
-	content, err := ioutil.ReadFile("web/udo.html")
+	content, err := ioutil.ReadFile("web/html/udo.html")
 	if err != nil {
 		http.Error(w, "Ошибка чтения файла", http.StatusInternalServerError)
 		return
@@ -98,7 +97,7 @@ func (api *API) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *API) calculateMolarMasses(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/calculateMolarMasses" {
+	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 	}
 	if r.Method != http.MethodPost {
@@ -112,11 +111,28 @@ func (api *API) calculateMolarMasses(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mass := calculator.CombineChemicalFormulas(f.Nitrate, f.Phosphate, f.Potassium, f.Micro)
-	log.Println(mass)
+	n := calculator.CombineChemicalFormulas(f.Nitrate, f.NitrateMass)
+	p := calculator.CombineChemicalFormulas(f.Phosphate, f.PhosphateMass)
+	k := calculator.CombineChemicalFormulas(f.Potassium, f.PotassiumMass)
+	m := calculator.CombineChemicalFormulas(f.Micro, f.MicroMass)
 
-	for symbol, mass := range mass {
-		fmt.Printf("%s: %.4f г/моль\n", symbol, mass)
+	//for symbol, mass := range n {
+	//	fmt.Printf("%s: %.4f г/моль\n", symbol, mass)
+	//}
+	//for symbol, mass := range p {
+	//	fmt.Printf("%s: %.4f г/моль\n", symbol, mass)
+	//}
+	//for symbol, mass := range k {
+	//	fmt.Printf("%s: %.4f г/моль\n", symbol, mass)
+	//}
+	//for symbol, mass := range m {
+	//	fmt.Printf("%s: %.4f г/моль\n", symbol, mass)
+	//}
+
+	response := calculator.CombineMaps(n, p, k, m)
+	fmt.Println("------------------------------------")
+	for symbol, mass := range response {
+		fmt.Printf("%s: %.4f г/литр\n", symbol, mass)
 	}
 
 	// Здесь вы можете выполнить расчет молярных масс для каждого вещества
@@ -130,9 +146,9 @@ func (api *API) calculateMolarMasses(w http.ResponseWriter, r *http.Request) {
 	//}
 
 	// Логирование данных из запроса
-	slog.Info("данные из ответа формы : ", mass)
+	slog.Info("данные из ответа формы : ", response)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(mass)
+	json.NewEncoder(w).Encode(response)
 
 }

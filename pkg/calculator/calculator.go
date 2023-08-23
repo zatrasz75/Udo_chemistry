@@ -3,7 +3,6 @@ package calculator
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"unicode"
 )
 
@@ -116,8 +115,7 @@ var molarMasses = map[string]float64{
 }
 
 // CombineChemicalFormulas Объединяет строковые значения элементов и атомов
-func CombineChemicalFormulas(formulas ...string) map[string]float64 {
-	formula := strings.Join(formulas, "")
+func CombineChemicalFormulas(formula, gram string) map[string]float64 {
 	charCount := make(map[string]int)
 
 	for i, char := range formula {
@@ -130,9 +128,10 @@ func CombineChemicalFormulas(formulas ...string) map[string]float64 {
 		}
 	}
 
-	mass := molarMassCompound(charCount)
+	malarMass := molarMassCompound(charCount)
+	totalSubstance := totalMassOfTheSubstance(malarMass, gram)
 
-	return mass
+	return totalSubstance
 }
 
 // MolarMassCompound Посчитывает малярную массу каждого элемента
@@ -149,6 +148,36 @@ func molarMassCompound(charCount map[string]int) map[string]float64 {
 			fmt.Printf("Не удалось найти молекулярную массу для элемента %s\n", element)
 		}
 	}
-	compoundMasses["total"] = totalMass
+
 	return compoundMasses
+}
+
+// TotalMassOfTheSubstance Подсчитывает массу в зависимости от внесенного вещества в граммах
+func totalMassOfTheSubstance(substance map[string]float64, mass string) map[string]float64 {
+	m, _ := strconv.Atoi(mass)
+	var total float64
+	result := make(map[string]float64)
+
+	for _, v := range substance {
+		total += v
+	}
+
+	for element, count := range substance {
+		result[element] = float64(m) * count / total
+	}
+
+	return result
+}
+
+// CombineMaps Объединяет полученные результаты в один список
+func CombineMaps(maps ...map[string]float64) map[string]float64 {
+	combined := make(map[string]float64)
+
+	for _, m := range maps {
+		for element, value := range m {
+			combined[element] += value
+		}
+	}
+
+	return combined
 }

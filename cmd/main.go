@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
 	"log"
@@ -65,6 +66,10 @@ func main() {
 
 	fmt.Println("// ----------------------------------------------------------------")
 
+	var wait time.Duration
+	flag.DurationVar(&wait, "graceful-timeout", time.Second*15, "продолжительность, в течение которой сервер корректно ожидает завершения существующих подключений - например, 15 секунд или 1 м")
+	flag.Parse()
+
 	port := os.Getenv("APP_PORT")
 	if port == "" {
 		log.Fatal("переменная окружения APP_PORT не задана")
@@ -93,35 +98,36 @@ func main() {
 	log.Println("Запуск сервера на ", "http://"+host+":"+port)
 
 	// Создаем HTTP сервер с заданным адресом и обработчиком.
-	srv := http.Server{
-		Addr:         ":" + port,
+	srv := &http.Server{
+		Addr:         host + ":" + port,
 		Handler:      router.api.Router(),
-		ReadTimeout:  20 * time.Second,
-		WriteTimeout: 20 * time.Second,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
 	// Запуск сервера в отдельном потоке.
 	go func() {
-		err := srv.ListenAndServe()
+		err = srv.ListenAndServe()
 		if err != nil {
 			log.Fatal("Не удалось запустить сервер шлюза. Error:", err)
 		}
 	}()
-	graceShutdown(srv)
+	graceShutdown(*srv, wait)
 
 }
 
 // Выключает сервер
-func graceShutdown(srv http.Server) {
+func graceShutdown(srv http.Server, wait time.Duration) {
 	quitCH := make(chan os.Signal, 1)
 	signal.Notify(quitCH, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	<-quitCH
 
-	// Создаем контекст с таймаутом 5 секунд.
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	// Создаем крайний срок для ожидания.
+	ctx, cancel := context.WithTimeout(context.Background(), wait)
 	defer cancel()
 
-	// Останавливаем сервер с таймаутом 5 секунд.
+	// Останавливаем сервер с таймаутом ожидания.
 	err := srv.Shutdown(ctx)
 	if err != nil {
 		log.Printf("Ошибка при закрытии прослушивателей или тайм-аут контекста %v", err)
