@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"io/ioutil"
-	"log/slog"
+	"log"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -116,37 +116,11 @@ func (api *API) calculateMolarMasses(w http.ResponseWriter, r *http.Request) {
 	k := calculator.CombineChemicalFormulas(f.Potassium, f.PotassiumMass)
 	m := calculator.CombineChemicalFormulas(f.Micro, f.MicroMass)
 
-	//for symbol, mass := range n {
-	//	fmt.Printf("%s: %.4f г/моль\n", symbol, mass)
-	//}
-	//for symbol, mass := range p {
-	//	fmt.Printf("%s: %.4f г/моль\n", symbol, mass)
-	//}
-	//for symbol, mass := range k {
-	//	fmt.Printf("%s: %.4f г/моль\n", symbol, mass)
-	//}
-	//for symbol, mass := range m {
-	//	fmt.Printf("%s: %.4f г/моль\n", symbol, mass)
-	//}
-
 	response := calculator.CombineMaps(n, p, k, m)
 	fmt.Println("------------------------------------")
 	for symbol, mass := range response {
-		fmt.Printf("%s: %.4f г/литр\n", symbol, mass)
+		log.Printf("%s: %.4f г/литр\n", symbol, mass)
 	}
-
-	// Здесь вы можете выполнить расчет молярных масс для каждого вещества
-	// И вернуть результат в формате JSON
-
-	//response := map[string]string{
-	//	"nitrate":   f.Nitrate,
-	//	"phosphate": f.Phosphate,
-	//	"potassium": f.Potassium,
-	//	"micro":     f.Micro,
-	//}
-
-	// Логирование данных из запроса
-	slog.Info("данные из ответа формы : ", response)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)

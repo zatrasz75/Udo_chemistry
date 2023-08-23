@@ -95,8 +95,6 @@ func main() {
 	// Логирования запросов.
 	router.api.Router().Use(middl.Middle)
 
-	log.Println("Запуск сервера на ", "http://"+host+":"+port)
-
 	// Создаем HTTP сервер с заданным адресом и обработчиком.
 	srv := &http.Server{
 		Addr:         host + ":" + port,
@@ -105,6 +103,7 @@ func main() {
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
+	log.Println("Запуск сервера на ", "http://"+srv.Addr)
 
 	// Запуск сервера в отдельном потоке.
 	go func() {

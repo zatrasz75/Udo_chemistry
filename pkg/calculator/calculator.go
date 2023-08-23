@@ -114,13 +114,20 @@ var molarMasses = map[string]float64{
 	"Lr": 262.00,
 }
 
-// CombineChemicalFormulas Объединяет строковые значения элементов и атомов
+// CombineChemicalFormulas Объединяет строковые значения элементов и атомов в список
 func CombineChemicalFormulas(formula, gram string) map[string]float64 {
 	charCount := make(map[string]int)
 
 	for i, char := range formula {
-		if !unicode.IsDigit(char) {
+		if !unicode.IsUpper(char) && !unicode.IsDigit(char) {
+			el := string(formula[i-1]) + string(char)
+			charCount[el]++
+
+			delete(charCount, string(formula[i-1]))
+
+		} else if !unicode.IsDigit(char) && unicode.IsUpper(char) {
 			charCount[string(char)]++
+
 		} else {
 			digit, _ := strconv.Atoi(string(char))
 			el := formula[i-1]
