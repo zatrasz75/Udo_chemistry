@@ -1,4 +1,3 @@
-// js.js
 function calculateMolarMasses() {
     const nitrateMass = document.getElementById('nitrate_mass').value;
     const phosphateMass = document.getElementById('phosphate_mass').value;
@@ -28,7 +27,14 @@ function calculateMolarMasses() {
     xhr.onreadystatechange = function () {
         if (xhr.readyState === 4 && xhr.status === 200) {
             const result = JSON.parse(xhr.responseText);
-            document.getElementById("result").innerText = JSON.stringify(result, null, 2);
+            let tableHtml = '<table><tr><th>Элементы</th><th>Массы</th></tr>';
+
+            for (const element in result) {
+                tableHtml += `<tr><td>${element}</td><td>${result[element].toFixed(4)}</td></tr>`;
+            }
+
+            tableHtml += '</table>';
+            document.getElementById("result").innerHTML = tableHtml;
         }
     };
 
