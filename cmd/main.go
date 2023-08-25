@@ -13,7 +13,6 @@ import (
 	"syscall"
 	"time"
 	"udo_mass/pkg/api"
-	"udo_mass/pkg/middl"
 )
 
 type server struct {
@@ -30,41 +29,12 @@ func init() {
 }
 
 func main() {
-	//inStr := "KH2PO4"
+	//formula1 := "KNO3"
+	//formula2 := "KH2PO4"
+	//formula3 := "K2SO4"
+	//formula4 := "FeSO4
 
 	fmt.Println("// -------------------------------------------------------------------------")
-
-	//// Создаем и заполняем карту молярных масс
-	//molarMassMap := make(map[string]float64)
-	//massMap := calculator.MolarMassCompound(molarMassMap)
-	//
-	//for symbol, mass := range massMap {
-	//	fmt.Printf("%s: %.4f г/моль\n", symbol, mass)
-	//}
-	//
-	//fmt.Println(massMap)
-
-	fmt.Println("// -------------------------------------------------------------------------")
-
-	//// Получение молярных масс из пакета calculator
-	//k := calculator.MolarMasses["K"]
-	//n := calculator.MolarMasses["N"]
-	//o := calculator.MolarMasses["O"]
-	//
-	//fmt.Println(k, n, o)
-	//
-	//// Вычисление массовой доли азота (N) в нитрате калия (KNO3)
-	//totalMolarMass := k + n + (o * 3) // Общая молярная масса нитрата калия
-	//fmt.Printf("Общая молярная масса %.4f г/моль\n", totalMolarMass)
-	//
-	//nitrogenFraction := (n / totalMolarMass) * 100 // Массовая доля азота в процентах
-	//fmt.Printf("Массовая доля азота в процентах: %.4f\n", nitrogenFraction)
-	//
-	//// Вычисление массы азота в граммах на моль (г/моль) в нитрате калия.
-	//nitrogenGramsPerMole := nitrogenFraction * (n / 100) // Массовая доля азота в долях от 1 моля азота
-	//fmt.Printf("Масса азота в нитрате калия: %.4f г/моль\n", nitrogenGramsPerMole)
-
-	fmt.Println("// ----------------------------------------------------------------")
 
 	var wait time.Duration
 	flag.DurationVar(&wait, "graceful-timeout", time.Second*15, "продолжительность, в течение которой сервер корректно ожидает завершения существующих подключений - например, 15 секунд или 1 м")
@@ -93,7 +63,7 @@ func main() {
 	router.api = api.New(webRoot)
 
 	// Логирования запросов.
-	router.api.Router().Use(middl.Middle)
+	//router.api.Router().Use(middl.Middle)
 
 	// Создаем HTTP сервер с заданным адресом и обработчиком.
 	srv := &http.Server{
