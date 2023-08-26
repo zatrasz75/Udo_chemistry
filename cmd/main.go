@@ -32,7 +32,7 @@ func main() {
 	//formula1 := "KNO3"
 	//formula2 := "KH2PO4"
 	//formula3 := "K2SO4"
-	//formula4 := "FeSO4
+	//formula4 := "FeSO4*7H2O
 
 	fmt.Println("// -------------------------------------------------------------------------")
 

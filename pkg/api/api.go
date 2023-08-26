@@ -114,9 +114,9 @@ func (api *API) calculateMolarMasses(w http.ResponseWriter, r *http.Request) {
 	n := calculator.CombineChemicalFormulas(f.Nitrate, f.NitrateMass)
 	p := calculator.CombineChemicalFormulas(f.Phosphate, f.PhosphateMass)
 	k := calculator.CombineChemicalFormulas(f.Potassium, f.PotassiumMass)
-	m := calculator.CombineChemicalFormulas(f.Micro, f.MicroMass)
+	ir := calculator.CombineChemicalFormulas(f.Micro, f.MicroMass)
 
-	response := calculator.CombineMaps(n, p, k, m)
+	response := calculator.CombineMaps(n, p, k, ir)
 	fmt.Println("------------------------------------")
 	for symbol, mass := range response {
 		log.Printf("%s: %.4f г/литр\n", symbol, mass)

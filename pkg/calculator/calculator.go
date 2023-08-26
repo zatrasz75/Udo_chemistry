@@ -3,6 +3,7 @@ package calculator
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -116,22 +117,25 @@ var molarMasses = map[string]float64{
 
 // CombineChemicalFormulas Объединяет строковые значения элементов и атомов в список
 func CombineChemicalFormulas(formula, gram string) map[string]float64 {
+	str, _ := containsSymbol(formula)
+
 	charCount := make(map[string]int)
 
-	for i, char := range formula {
+	for i, char := range str {
 		if !unicode.IsUpper(char) && !unicode.IsDigit(char) {
-			el := string(formula[i-1]) + string(char)
+			el := string(str[i-1]) + string(char)
 			charCount[el]++
 
-			delete(charCount, string(formula[i-1]))
+			delete(charCount, string(str[i-1]))
 
 		} else if !unicode.IsDigit(char) && unicode.IsUpper(char) {
 			charCount[string(char)]++
 
 		} else {
 			digit, _ := strconv.Atoi(string(char))
-			el := formula[i-1]
+			el := str[i-1]
 			charCount[string(el)] += digit - 1
+			delete(charCount, "1")
 		}
 	}
 
@@ -139,6 +143,54 @@ func CombineChemicalFormulas(formula, gram string) map[string]float64 {
 	totalSubstance := totalMassOfTheSubstance(malarMass, gram)
 
 	return totalSubstance
+}
+
+// containsSymbol Отъединяет строку, разделанную "*" знаком
+func containsSymbol(formula string) (string, error) {
+	if !strings.Contains(formula, "*") {
+		return formula, nil
+	}
+	part1 := ""
+	part2 := ""
+
+	parts := strings.Split(formula, "*")
+	if len(parts) == 2 {
+		part1 = strings.TrimSpace(parts[0])
+		part2 = strings.TrimSpace(parts[1])
+	} else {
+		fmt.Println("Invalid input format")
+		return "", nil
+	}
+
+	numStr := part2[0]
+	strOut := make(map[string]int)
+
+	num, err := strconv.Atoi(string(numStr))
+	if err != nil {
+		fmt.Println("Недопустимый формат номера:", err)
+		return "", err
+	}
+
+	for i, v := range part2 {
+		if !unicode.IsDigit(v) {
+			strOut[string(v)] = num
+
+		} else if unicode.IsDigit(v) && string(v) != string(numStr) {
+			a, _ := strconv.Atoi(string(v))
+			el := part2[i-1]
+			strOut[string(el)] = num * a
+		}
+	}
+	var newElements []string
+
+	for e, v := range strOut {
+		newElement := fmt.Sprintf("%s%d", e, v)
+		newElements = append(newElements, newElement)
+	}
+	// Добавляем новые элементы к исходной строке
+	newInput := part1 + strings.Join(newElements, "")
+
+	return newInput, err
 }
 
 // MolarMassCompound Посчитывает малярную массу каждого элемента
