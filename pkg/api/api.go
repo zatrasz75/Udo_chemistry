@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"udo_mass/logger"
 	"udo_mass/pkg/calculator"
 	"udo_mass/pkg/storage"
 )
@@ -87,6 +88,7 @@ func (api *API) home(w http.ResponseWriter, r *http.Request) {
 	content, err := ioutil.ReadFile("web/html/udo.html")
 	if err != nil {
 		http.Error(w, "Ошибка чтения файла", http.StatusInternalServerError)
+		logger.Error("Ошибка чтения файла", err)
 		return
 	}
 
@@ -108,6 +110,7 @@ func (api *API) calculateMolarMasses(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&f)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		logger.Error("Ошибка декодирования JSON", err)
 		return
 	}
 
@@ -124,5 +127,4 @@ func (api *API) calculateMolarMasses(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
-
 }

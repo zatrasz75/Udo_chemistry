@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"udo_mass/logger"
 	"unicode"
 )
 
@@ -117,7 +118,10 @@ var molarMasses = map[string]float64{
 
 // CombineChemicalFormulas Объединяет строковые значения элементов и атомов в список
 func CombineChemicalFormulas(formula, gram string) map[string]float64 {
-	str, _ := containsSymbol(formula)
+	str, err := containsSymbol(formula)
+	if err != nil {
+		logger.Error("Не удалось объединить строку", err)
+	}
 
 	charCount := make(map[string]int)
 
@@ -145,7 +149,7 @@ func CombineChemicalFormulas(formula, gram string) map[string]float64 {
 	return totalSubstance
 }
 
-// containsSymbol Отъединяет строку, разделанную "*" знаком
+// containsSymbol Объединяет строку, разделанную "*" знаком
 func containsSymbol(formula string) (string, error) {
 	if !strings.Contains(formula, "*") {
 		return formula, nil
@@ -158,7 +162,7 @@ func containsSymbol(formula string) (string, error) {
 		part1 = strings.TrimSpace(parts[0])
 		part2 = strings.TrimSpace(parts[1])
 	} else {
-		fmt.Println("Invalid input format")
+		logger.Info("Недопустимый формат ввода %s", parts)
 		return "", nil
 	}
 
@@ -167,7 +171,7 @@ func containsSymbol(formula string) (string, error) {
 
 	num, err := strconv.Atoi(string(numStr))
 	if err != nil {
-		fmt.Println("Недопустимый формат номера:", err)
+		logger.Error("Недопустимый формат номера:", err)
 		return "", err
 	}
 
@@ -204,7 +208,7 @@ func molarMassCompound(charCount map[string]int) map[string]float64 {
 			compoundMasses[element] = massForElement
 			totalMass += massForElement
 		} else {
-			fmt.Printf("Не удалось найти молекулярную массу для элемента %s\n", element)
+			logger.Info("Не удалось найти молекулярную массу для элемента %s", element)
 		}
 	}
 
