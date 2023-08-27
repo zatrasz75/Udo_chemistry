@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/joho/godotenv"
 	"log"
-	"net/http"
+	http "net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -92,16 +92,17 @@ func graceShutdown(srv http.Server, wait time.Duration) {
 	signal.Notify(quitCH, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	<-quitCH
 
-	// Создаем крайний срок для ожидания.
 	ctx, cancel := context.WithTimeout(context.Background(), wait)
 	defer cancel()
 
-	// Останавливаем сервер с таймаутом ожидания.
+	shutdownServer(srv, ctx)
+}
+
+func shutdownServer(srv http.Server, ctx context.Context) {
 	err := srv.Shutdown(ctx)
 	if err != nil {
-		log.Printf("Ошибка при закрытии прослушивателей или тайм-аут контекста %v", err)
-		return
+		log.Fatalf("Ошибка при закрытии прослушивателей или тайм-аут контекста: %v", err)
 	}
-	log.Printf("Выключение сервера")
-	os.Exit(0)
+
+	log.Println("Сервер успешно выключен")
 }
