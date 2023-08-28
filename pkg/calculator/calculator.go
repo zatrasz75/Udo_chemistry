@@ -8,13 +8,6 @@ import (
 	"unicode"
 )
 
-type Element struct {
-	Symbol         string
-	Mass           float64
-	Count          int
-	MassInCompound float64
-}
-
 // MolarMasses Создание карты с химическими элементами и их молярными массами
 var molarMasses = map[string]float64{
 	"H":  1.0081,
@@ -171,7 +164,7 @@ func containsSymbol(formula string) (string, error) {
 
 	num, err := strconv.Atoi(string(numStr))
 	if err != nil {
-		logger.Error("Недопустимый формат номера:", err)
+		logger.Error("Недопустимый формат цифры:", err)
 		return "", err
 	}
 

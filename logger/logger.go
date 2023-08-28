@@ -6,17 +6,27 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"time"
 )
 
+const maxLogFileSize = 100 * 1024 * 1024 // 100 MB
+
 var logger *log.Logger
+var logFile *os.File
+var fileSizeMutex sync.Mutex
 
 func init() {
-	logFile, err := os.Create("app.log")
+	filePath := "app.log"
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err != nil {
-		log.Fatal("Ошибка создания файла журнала:", err)
+		log.Fatal("Ошибка открытия файла журнала:", err)
 	}
+	logFile = file
 	logger = log.New(logFile, "", log.Ldate|log.Ltime|log.Lmicroseconds)
+
+	// Запускаем горутину для проверки размера файла и его обработки
+	go checkAndRotateLogFile()
 }
 
 func logWithCallerInfo(file string, line int, level string, message string, args ...interface{}) {
@@ -51,4 +61,33 @@ func Fatal(message string, err error) {
 
 func getFormattedTime() string {
 	return time.Now().Format("2006-01-02 15:04:05.000000")
+}
+
+func checkAndRotateLogFile() {
+	for {
+		time.Sleep(time.Minute) // Пауза для проверки раз в минуту (настраивайте по желанию)
+		fileSizeMutex.Lock()
+		stat, err := logFile.Stat()
+		if err != nil {
+			log.Println("Ошибка при получении информации о файле логов:", err)
+			fileSizeMutex.Unlock()
+			time.Sleep(time.Minute) // Делаем паузу если ошибка
+			continue
+		}
+		if stat.Size() > maxLogFileSize {
+			logFile.Close()
+			err = os.Rename("app.log", "app.old.log")
+			if err != nil {
+				log.Println("Ошибка при переименовании файла логов:", err)
+			}
+			newFile, err := os.OpenFile("app.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+			if err != nil {
+				log.Println("Ошибка при открытии нового файла журнала:", err)
+			} else {
+				logFile = newFile
+				logger.SetOutput(logFile)
+			}
+		}
+		fileSizeMutex.Unlock()
+	}
 }

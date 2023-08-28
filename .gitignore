@@ -10,7 +10,9 @@
 
 *.idea
 *.env
-*.app.log
+
+app.log
+app.old.log
 
 # Test binary, built with `go test -c`
 *.test

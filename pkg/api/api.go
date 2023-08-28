@@ -125,6 +125,7 @@ func (api *API) calculateMolarMasses(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s: %.4f г/литр\n", symbol, mass)
 	}
 
+	// Устанавливаем правильный Content-Type для HTML
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }

@@ -57,7 +57,7 @@ func main() {
 	// Получаем текущий путь к main.go
 	currentDir, err := os.Getwd()
 	if err != nil {
-		logger.Fatal("Не удалось получить текущий каталог:", err)
+		logger.Error("Не удалось получить текущий каталог:", err)
 	}
 	// Получаем абсолютный путь к каталогу web/
 	webRoot := filepath.Join(currentDir, "../web")
