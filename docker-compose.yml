@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  udo_chemistry:
+    container_name: udo_chemistry
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "7655:7654"
+
+
+  # docker-compose up -d

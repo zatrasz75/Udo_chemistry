@@ -7,8 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"path/filepath"
-	"strings"
+	"udo_mass/config"
 	"udo_mass/logger"
 	"udo_mass/pkg/calculator"
 	"udo_mass/pkg/storage"
@@ -16,9 +15,11 @@ import (
 
 // API представляет собой приложение с набором обработчиков.
 type API struct {
-	r *mux.Router // Маршрутизатор запросов
+	r    *mux.Router    // Маршрутизатор запросов
+	cfg  *config.Config // Конфигурация
+	port string         // Порт
+	host string         // Хост
 	//db        storage.Interface // база данных
-	webRoot string // Корневая директория для веб-приложения
 }
 
 // Router возвращает маршрутизатор запросов.
@@ -27,12 +28,14 @@ func (api *API) Router() *mux.Router {
 }
 
 // New создает новый экземпляр API и инициализирует его маршрутизатор.
-func New(webRoot string) *API {
+func New(cfg *config.Config, port string, host string) *API {
 	// Создаём новый API и привязываем к нему маршрутизатор и корневую директорию для веб-приложения.
 	api := &API{
-		r: mux.NewRouter(),
+		r:    mux.NewRouter(),
+		cfg:  cfg,
+		port: port,
+		host: host,
 		//	db:        db,
-		webRoot: webRoot,
 	}
 	// Регистрируем обработчики API.
 	api.endpoints()
@@ -49,34 +52,6 @@ func (api *API) endpoints() {
 	api.r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./web/static"))))
 }
 
-// Обработчик для статических файлов веб-приложения.
-func (api *API) serveWebFiles(w http.ResponseWriter, r *http.Request) {
-	filePath := r.URL.Path
-	// Проверяем, что запрошенный путь начинается с "/static/".
-	if !strings.HasPrefix(filePath, "/static/") {
-		http.NotFound(w, r)
-		return
-	}
-
-	// Проверяем, что путь после "/static/" не содержит "../" (попытка обхода пути).
-	if strings.Contains(filePath, "../") {
-		http.NotFound(w, r)
-		return
-	}
-
-	// Строим абсолютный путь к файлу.
-	absolutePath := filepath.Join(api.webRoot, filePath[5:])
-
-	// Проверяем, что абсолютный путь находится в пределах корневой директории для веб-приложения.
-	if !strings.HasPrefix(absolutePath, api.webRoot) {
-		http.NotFound(w, r)
-		return
-	}
-
-	// Обслуживаем статический файл.
-	http.ServeFile(w, r, absolutePath)
-}
-
 func (api *API) home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
@@ -87,7 +62,7 @@ func (api *API) home(w http.ResponseWriter, r *http.Request) {
 
 	content, err := ioutil.ReadFile("web/html/udo.html")
 	if err != nil {
-		http.Error(w, "Ошибка чтения файла", http.StatusInternalServerError)
+		http.Error(w, "Ошибка чтения файла", http.StatusNotFound)
 		logger.Error("Ошибка чтения файла", err)
 		return
 	}

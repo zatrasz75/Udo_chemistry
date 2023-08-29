@@ -8,9 +8,9 @@ import (
 	http "net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 	"time"
+	"udo_mass/config"
 	"udo_mass/logger"
 	"udo_mass/pkg/api"
 )
@@ -40,32 +40,18 @@ func main() {
 	flag.DurationVar(&wait, "graceful-timeout", time.Second*15, "продолжительность, в течение которой сервер корректно ожидает завершения существующих подключений - например, 15 секунд или 1 м")
 	flag.Parse()
 
-	port := os.Getenv("APP_PORT")
-	if port == "" {
-		logger.Info("переменная окружения APP_PORT не задана")
-		return
-	}
-	host := os.Getenv("APP_HOST")
-	if host == "" {
-		logger.Info("Переменная окружения APP_HOST не задана")
-		return
-	}
-
 	// объект сервера
 	var router server
 
-	// Получаем текущий путь к main.go
-	currentDir, err := os.Getwd()
-	if err != nil {
-		logger.Error("Не удалось получить текущий каталог:", err)
-	}
-	// Получаем абсолютный путь к каталогу web/
-	webRoot := filepath.Join(currentDir, "../web")
+	// Конфигурация
+	cfg := config.New()
 
-	router.api = api.New(webRoot)
+	// Порт по умолчанию.
+	port := cfg.Udo.AddrPort
+	// Хост по умолчанию.
+	host := cfg.Udo.AddrHost
 
-	// Логирования запросов.
-	//router.api.Router().Use(middl.Middle)
+	router.api = api.New(cfg, port, host)
 
 	// Создаем HTTP сервер с заданным адресом и обработчиком.
 	srv := &http.Server{
@@ -79,7 +65,7 @@ func main() {
 
 	// Запуск сервера в отдельном потоке.
 	go func() {
-		err = srv.ListenAndServe()
+		err := srv.ListenAndServe()
 		if err != nil {
 			logger.Fatal("Не удалось запустить сервер шлюза. Error:", err)
 		}
