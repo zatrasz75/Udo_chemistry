@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"udo_mass/config"
 	"udo_mass/logger"
 	"udo_mass/pkg/calculator"
 	"udo_mass/pkg/storage"
@@ -15,10 +14,10 @@ import (
 
 // API представляет собой приложение с набором обработчиков.
 type API struct {
-	r    *mux.Router    // Маршрутизатор запросов
-	cfg  *config.Config // Конфигурация
-	port string         // Порт
-	host string         // Хост
+	r *mux.Router // Маршрутизатор запросов
+	//cfg  *config.Config // Конфигурация
+	port string // Порт
+	host string // Хост
 	//db        storage.Interface // база данных
 }
 
@@ -28,11 +27,10 @@ func (api *API) Router() *mux.Router {
 }
 
 // New создает новый экземпляр API и инициализирует его маршрутизатор.
-func New(cfg *config.Config, port string, host string) *API {
+func New(port string, host string) *API {
 	// Создаём новый API и привязываем к нему маршрутизатор и корневую директорию для веб-приложения.
 	api := &API{
 		r:    mux.NewRouter(),
-		cfg:  cfg,
 		port: port,
 		host: host,
 		//	db:        db,

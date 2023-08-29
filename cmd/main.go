@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/joho/godotenv"
 	http "net/http"
 	"os"
 	"os/signal"
@@ -20,11 +19,16 @@ type server struct {
 	api *api.API
 }
 
+var cfg config.Config
+
 // init вызывается перед main()
 func init() {
-	// загружает значения из файла .env в систему
-	if err := godotenv.Load(); err != nil {
-		logger.Fatal("Файл .env не найден.", err)
+	path := flag.String("config", "", "путь к конфигурационному файлу")
+	flag.Parse()
+
+	err := cfg.LoadEnv(*path)
+	if err != nil {
+		logger.Fatal("не удалось загрузить переменные окружения: %s", err)
 	}
 }
 
@@ -43,15 +47,12 @@ func main() {
 	// объект сервера
 	var router server
 
-	// Конфигурация
-	cfg := config.New()
-
 	// Порт по умолчанию.
-	port := cfg.Udo.AddrPort
+	port := cfg.AddrPort
 	// Хост по умолчанию.
-	host := cfg.Udo.AddrHost
+	host := cfg.AddrHost
 
-	router.api = api.New(cfg, port, host)
+	router.api = api.New(port, host)
 
 	// Создаем HTTP сервер с заданным адресом и обработчиком.
 	srv := &http.Server{

@@ -27,7 +27,6 @@ WORKDIR /app/udo
 RUN apt-get update
 
 COPY --from=builder /app/udo/udo ./
-COPY --from=builder /app/udo/.env ./
 COPY ./ ./
 
 # Указываем переменную окружения
