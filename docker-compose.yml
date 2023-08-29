@@ -9,6 +9,3 @@ services:
       dockerfile: Dockerfile
     ports:
       - "7655:7654"
-
-
-  # docker-compose up -d
