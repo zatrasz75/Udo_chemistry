@@ -9,3 +9,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - "7655:7654"
+    environment:
+      APP_HOST: "0.0.0.0" # Измените на нужный вам хост
+      APP_PORT: "7654"
+      READ_TIMEOUT: "15s"
+      WRITE_TIMEOUT: "15s"
+      IDLE_TIMEOUT: "60s"
+      SHUTDOWN_TIMEOUT: "30s"

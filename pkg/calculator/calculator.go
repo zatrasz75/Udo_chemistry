@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"udo_mass/logger"
+	"udo_mass/pkg/logger"
 	"unicode"
 )
 
@@ -201,7 +201,7 @@ func molarMassCompound(charCount map[string]int) map[string]float64 {
 			compoundMasses[element] = massForElement
 			totalMass += massForElement
 		} else {
-			logger.Info("Не удалось найти молекулярную массу для элемента %s", element)
+			logger.Debug("Не удалось найти молекулярную массу для элемента %s", element)
 		}
 	}
 

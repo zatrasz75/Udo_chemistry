@@ -29,10 +29,6 @@ RUN apt-get update
 COPY --from=builder /app/udo/udo ./
 COPY ./ ./
 
-# Указываем переменную окружения
-ENV APP_PORT=7654
-ENV APP_HOST=0.0.0.0
-
 CMD ["./udo"]
 
 
@@ -40,4 +36,5 @@ CMD ["./udo"]
 
 #docker run --rm -d -p 7655:7654 --name=udo_chemistry udo
 
+# docker-compose down
 # docker-compose up -d

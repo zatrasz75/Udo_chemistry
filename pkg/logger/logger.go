@@ -59,10 +59,19 @@ func Fatal(message string, err error) {
 	os.Exit(1) // Завершаем приложение с кодом ошибки
 }
 
-func getFormattedTime() string {
-	return time.Now().Format("2006-01-02 15:04:05.000000")
+// Debug записывает информационное сообщение в лог вместе с контекстом вызова функции.
+// Параметры args содержат дополнительные данные для сообщения.
+func Debug(message string, args ...interface{}) {
+	_, file, line, _ := runtime.Caller(1)
+	logWithCallerInfo(file, line, "DEBUG", message, args...)
 }
 
+// getFormattedTime возвращает текущее время в заданном формате.
+func getFormattedTime() string {
+	return time.Now().Format("2006-01-02 15:04:05")
+}
+
+// checkAndRotateLogFile проверяет размер файла лога и при необходимости выполняет его ротацию.
 func checkAndRotateLogFile() {
 	for {
 		time.Sleep(time.Minute) // Пауза для проверки раз в минуту (настраивайте по желанию)
@@ -74,6 +83,7 @@ func checkAndRotateLogFile() {
 			time.Sleep(time.Minute) // Делаем паузу если ошибка
 			continue
 		}
+
 		if stat.Size() > maxLogFileSize {
 			logFile.Close()
 			err = os.Rename("app.log", "app.old.log")
