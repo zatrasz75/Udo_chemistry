@@ -8,8 +8,10 @@ import (
 	"os/signal"
 	"syscall"
 	"udo_mass/config"
-	"udo_mass/pkg/handlers"
+	handlers "udo_mass/pkg/handlers"
 	"udo_mass/pkg/logger"
+	"udo_mass/pkg/storage"
+	"udo_mass/pkg/storage/postgres"
 )
 
 // API представляет собой приложение с набором обработчиков.
@@ -18,7 +20,7 @@ type API struct {
 	port string      // Порт
 	host string      // Хост
 	srv  *http.Server
-	//db        storage.Interface // база данных
+	db   storage.Database // база данных
 }
 
 // Router возвращает маршрутизатор запросов.
@@ -26,17 +28,32 @@ func (api *API) Router() *mux.Router {
 	return api.r
 }
 
+// GetDB Метод для получения db в структуре API.
+func (api *API) GetDB() storage.Database {
+	return api.db
+}
+
 // New создает новый экземпляр API и инициализирует его маршрутизатор.
 func New() *API {
 	// Конфигурация
 	cfg := config.New()
+
+	db, err := postgres.New(cfg.Database.ConnStr)
+	if err != nil {
+		logger.Fatal("нет соединения с PostgresSQL", err)
+	}
+	err = db.CreatMolarMassTable()
+	if err != nil {
+		logger.Fatal("не удалось создать таблицу molar_mass_data", err)
+		return nil
+	}
 
 	// Создаём новый API и привязываем к нему маршрутизатор и корневую директорию для веб-приложения.
 	api := &API{
 		r:    mux.NewRouter(),
 		port: cfg.Server.AddrPort,
 		host: cfg.Server.AddrHost,
-		//	db:        db,
+		db:   db,
 	}
 	// Регистрируем обработчики API.
 	api.endpoints()
@@ -111,7 +128,11 @@ func shutdownServer(httpServer *API) error {
 // Регистрация обработчиков API.
 func (api *API) endpoints() {
 	api.r.HandleFunc("/", handlers.Home).Methods(http.MethodGet)
-	api.r.HandleFunc("/", handlers.CalculateMolarMasses).Methods(http.MethodPost)
+	//api.r.HandleFunc("/", handlers.CalculateMolarMasses).Methods(http.MethodPost)
+
+	api.r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		handlers.CalculateMolarMasses(w, r, api.GetDB())
+	}).Methods(http.MethodPost)
 
 	// веб-приложение
 	api.r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./web/static"))))

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"github.com/spf13/viper"
 	"os"
 	"time"
@@ -8,7 +9,8 @@ import (
 )
 
 type Config struct {
-	Server Server
+	Server   Server
+	Database Database
 }
 
 type Server struct {
@@ -18,6 +20,16 @@ type Server struct {
 	WriteTimeout time.Duration
 	IdleTimeout  time.Duration
 	ShutdownTime time.Duration
+}
+
+type Database struct {
+	ConnStr string //postgres://postgres:postgrespw@localhost:49153/Account
+
+	Host     string // postgres
+	User     string // postgres
+	Password string // postgrespw
+	Name     string // Account
+	Port     string // 49153
 }
 
 func New() *Config {
@@ -93,5 +105,33 @@ func New() *Config {
 			IdleTimeout:  idleTimeout,
 			ShutdownTime: shutdownTime,
 		},
+		Database: Database{
+			ConnStr:  initDb(),
+			Host:     viper.GetString("HOST_DB"),
+			User:     viper.GetString("USER_DB"),
+			Password: viper.GetString("PASSWORD_DB"),
+			Name:     viper.GetString("NAME_DB"),
+			Port:     viper.GetString("PORT_DB"),
+		},
 	}
+}
+
+func initDb() string {
+	connStr := os.Getenv("DB_POSTGRES_URL")
+	if connStr == "" {
+		c := &Config{
+			Database: Database{
+				Host:     viper.GetString("HOST_DB"),
+				User:     viper.GetString("USER_DB"),
+				Password: viper.GetString("PASSWORD_DB"),
+				Name:     viper.GetString("NAME_DB"),
+				Port:     viper.GetString("PORT_DB"),
+			},
+		}
+		connStr = fmt.Sprintf(
+			"%s://%s:%s@localhost:%s/%s",
+			c.Database.Host, c.Database.User, c.Database.Password, c.Database.Port, c.Database.Name,
+		)
+	}
+	return connStr
 }

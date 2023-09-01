@@ -10,3 +10,17 @@ type MolarMasses struct {
 	MicroMass     string `json:"micro_mass"`
 	Micro         string `json:"micro"`
 }
+
+type TableMolarMass struct {
+	Symbol []string
+	Mass   []float64
+}
+
+type Database interface {
+	CreatMolarMassTable() error
+	DropMolarMassTable() error
+	AddMolarMass(c TableMolarMass) error
+	//SearchAccount(c Account) (string, error)
+	//KeysAccount(c Account) (bool, error)
+	//DelAccount(c Account) (bool, error)
+}

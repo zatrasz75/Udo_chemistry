@@ -34,7 +34,7 @@ func Home(w http.ResponseWriter, r *http.Request) {
 }
 
 // CalculateMolarMasses обрабатывает POST запросы для вычисления молекулярных масс химических соединений.
-func CalculateMolarMasses(w http.ResponseWriter, r *http.Request) {
+func CalculateMolarMasses(w http.ResponseWriter, r *http.Request, getDB storage.Database) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 	}
@@ -55,10 +55,26 @@ func CalculateMolarMasses(w http.ResponseWriter, r *http.Request) {
 	k := calculator.CombineChemicalFormulas(f.Potassium, f.PotassiumMass)
 	ir := calculator.CombineChemicalFormulas(f.Micro, f.MicroMass)
 
+	// Получение db в структуре API
+	db := getDB
+
 	response := calculator.CombineMaps(n, p, k, ir)
 	fmt.Println("------------------------------------")
+	// Создаем одну запись с данными о всех элементах
+	symbols := make([]string, 0, len(response))
+	masses := make([]float64, 0, len(response))
 	for symbol, mass := range response {
 		log.Printf("%s: %.4f г/литр\n", symbol, mass)
+		symbols = append(symbols, symbol)
+		masses = append(masses, mass)
+	}
+	c := storage.TableMolarMass{
+		Symbol: symbols,
+		Mass:   masses,
+	}
+	err = db.AddMolarMass(c)
+	if err != nil {
+		logger.Error("ошибка при вставке данных в базу данных:", err)
 	}
 
 	// Устанавливаем правильный Content-Type для HTML

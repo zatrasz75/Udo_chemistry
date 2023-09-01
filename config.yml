@@ -6,3 +6,10 @@ WRITE_TIMEOUT : "15"
 IDLE_TIMEOUT: "60"
 
 SHUTDOWN_TIMEOUT: "30"
+
+#DB_POSTGRES_URL: "postgres://postgres:postgrespw@localhost:49153/Account"
+HOST_DB: "postgres"
+USER_DB: "postgres"
+PASSWORD_DB: "postgrespw"
+NAME_DB: "Account"
+PORT_DB: "49153"
