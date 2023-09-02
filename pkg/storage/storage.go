@@ -16,4 +16,5 @@ type Database interface {
 	DropMolarMassTable() error
 	AddMolarMass(c map[string]float64) error
 	AllMolarMass() ([]map[int]map[string]float64, error)
+	DelRecord(id int) (bool, error)
 }

@@ -38,3 +38,25 @@ function calculateMolarMasses() {
 
     xhr.send(JSON.stringify(data));
 }
+
+function deleteRecord() {
+    const recordId = document.getElementById('recordId').value;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/delet?id=" + recordId, true);
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                // Обновляем содержимое <div id="result"> с сообщением об успешном удалении
+                document.getElementById("result").innerHTML = "Запись успешно удалена.";
+            } else {
+                // Обработка ошибок, если необходимо
+                console.error("Ошибка при выполнении запроса:", xhr.status);
+            }
+        }
+    }
+
+    xhr.send();
+}
+

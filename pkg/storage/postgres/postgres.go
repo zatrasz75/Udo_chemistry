@@ -32,7 +32,8 @@ func New(constr string) (*Store, error) {
 func (s *Store) CreatMolarMassTable() error {
 	qwery := `CREATE TABLE IF NOT EXISTS "molar_mass_data" (
     id SERIAL PRIMARY KEY,
-    data JSONB
+    data JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
 );`
 
 	_, err := s.db.Exec(context.Background(), qwery)
@@ -112,4 +113,16 @@ func (s *Store) AllMolarMass() ([]map[int]map[string]float64, error) {
 	}
 
 	return data, nil
+}
+
+// DelRecord Удаляет запись с выбранным id
+func (s *Store) DelRecord(id int) (bool, error) {
+	delet := "DELETE FROM molar_mass_data WHERE id = $1"
+
+	_, err := s.db.Exec(context.Background(), delet, id)
+	if err != nil {
+		logger.Error("не удалось удалить запись", err)
+		return false, err
+	}
+	return true, nil
 }

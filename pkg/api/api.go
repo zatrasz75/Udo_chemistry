@@ -142,6 +142,10 @@ func (api *API) endpoints() {
 		handlers.CalculateMolarMasses(w, r, api.GetDB())
 	}).Methods(http.MethodPost)
 
+	api.r.HandleFunc("/delet", func(w http.ResponseWriter, r *http.Request) {
+		handlers.DelRecord(w, r, api.GetDB())
+	}).Methods(http.MethodPost)
+
 	// веб-приложение
 	api.r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("./web/static"))))
 }

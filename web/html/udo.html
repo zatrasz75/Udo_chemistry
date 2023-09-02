@@ -26,6 +26,13 @@
     <button type="button" onclick="calculateMolarMasses()">Расчитать</button>
 </form>
 
+<!-- Форма для удаления записи по id -->
+<form id="deleteRecordForm">
+    <label for="recordId">ID записи для удаления:</label>
+    <input type="text" id="recordId" name="recordId">
+    <button type="button" onclick="deleteRecord()">Удалить запись</button>
+</form>
+
 <div id="result"></div>
 
 </body>

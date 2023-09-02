@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"udo_mass/pkg/calculator"
 	"udo_mass/pkg/logger"
 	"udo_mass/pkg/storage"
@@ -87,4 +88,41 @@ func CalculateMolarMasses(w http.ResponseWriter, r *http.Request, db storage.Dat
 	// Устанавливаем правильный Content-Type для HTML
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(output))
+}
+
+// DelRecord обрабатывает POST запрос и удаляет запись в базе данных по её id
+func DelRecord(w http.ResponseWriter, r *http.Request, db storage.Database) {
+	if r.URL.Path != "/delet" {
+		http.NotFound(w, r)
+	}
+	if r.Method != http.MethodPost {
+		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+	}
+
+	// Получаем id записи, которую нужно удалить, из запроса
+	idStr := r.FormValue("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Неверный формат id", http.StatusBadRequest)
+		logger.Error("Неверный формат id", err)
+		return
+	}
+	logger.Info(idStr)
+
+	// Удалить запись по id
+	deleted, err := db.DelRecord(id)
+	if err != nil {
+		http.Error(w, "Ошибка при удалении записи", http.StatusInternalServerError)
+		logger.Error("Ошибка при удалении записи", err)
+		return
+	}
+	// Проверяем, была ли запись успешно удалена
+	if !deleted {
+		http.Error(w, "Запись с указанным id не найдена", http.StatusNotFound)
+		logger.Error("Запись с указанным id не найдена", err)
+		return
+	}
+
+	// Отправляем успешный ответ
+	w.WriteHeader(http.StatusOK)
 }
