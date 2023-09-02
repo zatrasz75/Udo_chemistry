@@ -2,11 +2,10 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/lib/pq"
 	"time"
 	"udo_mass/pkg/logger"
-	Database "udo_mass/pkg/storage"
 )
 
 // Store Хранилище данных
@@ -33,8 +32,7 @@ func New(constr string) (*Store, error) {
 func (s *Store) CreatMolarMassTable() error {
 	qwery := `CREATE TABLE IF NOT EXISTS "molar_mass_data" (
     id SERIAL PRIMARY KEY,
-    symbols TEXT[] NOT NULL,
-    masses FLOAT[] NOT NULL
+    data JSONB
 );`
 
 	_, err := s.db.Exec(context.Background(), qwery)
@@ -58,17 +56,60 @@ func (s *Store) DropMolarMassTable() error {
 	return nil
 }
 
-// AddMolarMass Добавляет данные в базу Postgres
-func (s *Store) AddMolarMass(c Database.TableMolarMass) error {
-	symbols := pq.StringArray(c.Symbol)
-	masses := pq.Float64Array(c.Mass)
+// AddMolarMass Добавляет данные в таблицу molar_mass_data
+func (s *Store) AddMolarMass(response map[string]float64) error {
+	jsonData, err := json.Marshal(response)
+	if err != nil {
+		logger.Error("ошибка при преобразовании данных в JSON:", err)
+	}
 
-	_, err := s.db.Exec(context.Background(),
-		"INSERT INTO molar_mass_data(symbols, masses) VALUES ($1, $2);", symbols, masses)
+	_, err = s.db.Exec(context.Background(),
+		"INSERT INTO molar_mass_data(data) VALUES ($1);", jsonData)
 	if err != nil {
 		logger.Error("ошибка при вставке данных в базу данных:", err)
 		return err
 	}
 
 	return nil
+}
+
+// AllMolarMass Выводит все данные из таблицы molar_mass_data
+func (s *Store) AllMolarMass() ([]map[int]map[string]float64, error) {
+	var data []map[int]map[string]float64
+
+	rows, err := s.db.Query(context.Background(), "SELECT id, data FROM molar_mass_data;")
+	if err != nil {
+		logger.Error("ошибка при выполнении запроса:", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id int
+		var jsonData []byte
+		err = rows.Scan(&id, &jsonData)
+		if err != nil {
+			logger.Error("ошибка при сканировании строки:", err)
+			return nil, err
+		}
+
+		var result map[string]float64
+		err = json.Unmarshal(jsonData, &result)
+		if err != nil {
+			logger.Error("ошибка при разборе JSON:", err)
+			return nil, err
+		}
+		dataPoint := map[int]map[string]float64{
+			id: result,
+		}
+
+		data = append(data, dataPoint)
+	}
+
+	if err = rows.Err(); err != nil {
+		logger.Error("ошибка при обработке результатов запроса:", err)
+		return nil, err
+	}
+
+	return data, nil
 }

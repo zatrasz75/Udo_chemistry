@@ -34,7 +34,7 @@ func Home(w http.ResponseWriter, r *http.Request) {
 }
 
 // CalculateMolarMasses обрабатывает POST запросы для вычисления молекулярных масс химических соединений.
-func CalculateMolarMasses(w http.ResponseWriter, r *http.Request, getDB storage.Database) {
+func CalculateMolarMasses(w http.ResponseWriter, r *http.Request, db storage.Database) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 	}
@@ -55,33 +55,36 @@ func CalculateMolarMasses(w http.ResponseWriter, r *http.Request, getDB storage.
 	k := calculator.CombineChemicalFormulas(f.Potassium, f.PotassiumMass)
 	ir := calculator.CombineChemicalFormulas(f.Micro, f.MicroMass)
 
-	// Получение db в структуре API
-	db := getDB
-
 	response := calculator.CombineMaps(n, p, k, ir)
 	fmt.Println("------------------------------------")
 	// Создаем одну запись с данными о всех элементах
-	symbols := make([]string, 0, len(response))
-	masses := make([]float64, 0, len(response))
 	for symbol, mass := range response {
 		log.Printf("%s: %.4f г/литр\n", symbol, mass)
-		symbols = append(symbols, symbol)
-		masses = append(masses, mass)
 	}
-	c := storage.TableMolarMass{
-		Symbol: symbols,
-		Mass:   masses,
+
+	if len(response) != 0 {
+		err = db.AddMolarMass(response)
+		if err != nil {
+			logger.Error("ошибка при вставке данных в базу данных:", err)
+		}
 	}
-	err = db.AddMolarMass(c)
+
+	all, err := db.AllMolarMass()
 	if err != nil {
-		logger.Error("ошибка при вставке данных в базу данных:", err)
+		logger.Error("не получилось получить данные из таблицы", err)
+	}
+	// Формируем HTML-строку с данными
+	var output string
+	for _, v := range all {
+		for id, data := range v {
+			output += fmt.Sprintf("Ответ: %d<br>\n", id)
+			for element, mass := range data {
+				output += fmt.Sprintf("%s: %.4f г/литр<br>\n", element, mass)
+			}
+		}
 	}
 
 	// Устанавливаем правильный Content-Type для HTML
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		http.Error(w, "Ошибка кодирования JSON", http.StatusInternalServerError)
-		logger.Error("Ошибка кодирования JSON", err)
-	}
+	w.Write([]byte(output))
 }

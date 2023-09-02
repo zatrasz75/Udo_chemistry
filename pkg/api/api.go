@@ -42,6 +42,10 @@ func New() *API {
 	if err != nil {
 		logger.Fatal("нет соединения с PostgresSQL", err)
 	}
+	err = db.DropMolarMassTable()
+	if err != nil {
+		logger.Fatal("не удалось удалить таблицу", err)
+	}
 	err = db.CreatMolarMassTable()
 	if err != nil {
 		logger.Fatal("не удалось создать таблицу molar_mass_data", err)
@@ -129,6 +133,10 @@ func shutdownServer(httpServer *API) error {
 func (api *API) endpoints() {
 	api.r.HandleFunc("/", handlers.Home).Methods(http.MethodGet)
 	//api.r.HandleFunc("/", handlers.CalculateMolarMasses).Methods(http.MethodPost)
+
+	//api.r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	//	handlers.Home(w, r, api.GetDB())
+	//}).Methods(http.MethodGet)
 
 	api.r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handlers.CalculateMolarMasses(w, r, api.GetDB())

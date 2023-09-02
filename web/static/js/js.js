@@ -25,18 +25,16 @@ function calculateMolarMasses() {
     xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
 
     xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4 && xhr.status === 200) {
-            const result = JSON.parse(xhr.responseText);
-            let tableHtml = '<table><tr><th>Элементы</th><th>Массы</th></tr>';
-
-            for (const element in result) {
-                tableHtml += `<tr><td>${element}</td><td>${result[element].toFixed(4)}</td></tr>`;
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                // Обновляем содержимое <div id="result"> с данными из ответа сервера
+                document.getElementById("result").innerHTML = xhr.responseText;
+            } else {
+                // Обработка ошибок, если необходимо
+                console.error("Ошибка при выполнении запроса:", xhr.status);
             }
-
-            tableHtml += '</table>';
-            document.getElementById("result").innerHTML = tableHtml;
         }
-    };
+    }
 
     xhr.send(JSON.stringify(data));
 }
