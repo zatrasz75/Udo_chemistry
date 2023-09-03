@@ -132,11 +132,6 @@ func shutdownServer(httpServer *API) error {
 // Регистрация обработчиков API.
 func (api *API) endpoints() {
 	api.r.HandleFunc("/", handlers.Home).Methods(http.MethodGet)
-	//api.r.HandleFunc("/", handlers.CalculateMolarMasses).Methods(http.MethodPost)
-
-	//api.r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-	//	handlers.Home(w, r, api.GetDB())
-	//}).Methods(http.MethodGet)
 
 	api.r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handlers.CalculateMolarMasses(w, r, api.GetDB())

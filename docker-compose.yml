@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3.9"
 
 services:
   udo_chemistry:
@@ -16,3 +16,18 @@ services:
       WRITE_TIMEOUT: "15s"
       IDLE_TIMEOUT: "60s"
       SHUTDOWN_TIMEOUT: "30s"
+      DB_POSTGRES_URL: "host=udo_db user=chemistry password=rootinna dbname=Udo sslmode=disable"
+    depends_on:
+      - udo_db
+  udo_db:
+    container_name: udo_db
+    restart: always
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: Udo
+      POSTGRES_USER: chemistry
+      POSTGRES_PASSWORD: rootinna
+    volumes:
+      - ./udo_db:/docker-entrypoint-initdb.d
+    ports:
+      - "5557:5432"
