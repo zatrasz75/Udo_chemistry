@@ -115,6 +115,19 @@ func (s *Store) AllMolarMass() ([]map[int]map[string]float64, error) {
 	return data, nil
 }
 
+// SearchRecordById Проверяет, существует запись с таким id.
+func (s *Store) SearchRecordById(id int) (bool, error) {
+	query := "SELECT EXISTS(SELECT 1 FROM molar_mass_data WHERE id = $1)"
+
+	var exists bool
+	err := s.db.QueryRow(context.Background(), query, id).Scan(&exists)
+	if err != nil {
+		logger.Error("нет такой записи", err)
+		return false, err
+	}
+	return exists, err
+}
+
 // DelRecord Удаляет запись с выбранным id
 func (s *Store) DelRecord(id int) (bool, error) {
 	delet := "DELETE FROM molar_mass_data WHERE id = $1"

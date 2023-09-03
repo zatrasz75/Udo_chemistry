@@ -17,4 +17,5 @@ type Database interface {
 	AddMolarMass(c map[string]float64) error
 	AllMolarMass() ([]map[int]map[string]float64, error)
 	DelRecord(id int) (bool, error)
+	SearchRecordById(id int) (bool, error)
 }

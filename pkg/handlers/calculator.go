@@ -72,7 +72,9 @@ func CalculateMolarMasses(w http.ResponseWriter, r *http.Request, db storage.Dat
 
 	all, err := db.AllMolarMass()
 	if err != nil {
+		http.Error(w, "не получилось получить данные из таблицы", http.StatusInternalServerError)
 		logger.Error("не получилось получить данные из таблицы", err)
+		return
 	}
 	// Формируем HTML-строку с данными
 	var output string
@@ -107,7 +109,21 @@ func DelRecord(w http.ResponseWriter, r *http.Request, db storage.Database) {
 		logger.Error("Неверный формат id", err)
 		return
 	}
-	logger.Info(idStr)
+
+	// Проверяем, есть такая запись
+	exists, err := db.SearchRecordById(id)
+	if err != nil {
+		// Обработка ошибки, если она возникла при поиске записи
+		http.Error(w, "Ошибка при поиске записи", http.StatusInternalServerError)
+		logger.Error("Ошибка при поиске записи", err)
+		return
+	}
+	if !exists {
+		// Запись с указанным id не существует
+		http.Error(w, "Запись с указанным id не найдена", http.StatusNotFound)
+		logger.Info("Запись с указанным id не найдена %s", idStr)
+		return
+	}
 
 	// Удалить запись по id
 	deleted, err := db.DelRecord(id)
@@ -121,8 +137,28 @@ func DelRecord(w http.ResponseWriter, r *http.Request, db storage.Database) {
 		http.Error(w, "Запись с указанным id не найдена", http.StatusNotFound)
 		logger.Error("Запись с указанным id не найдена", err)
 		return
+	} else {
+		logger.Info("Запись удалена id %s", idStr)
 	}
 
-	// Отправляем успешный ответ
-	w.WriteHeader(http.StatusOK)
+	all, err := db.AllMolarMass()
+	if err != nil {
+		http.Error(w, "не получилось получить данные из таблицы", http.StatusInternalServerError)
+		logger.Error("не получилось получить данные из таблицы", err)
+		return
+	}
+	// Формируем HTML-строку с данными
+	var output string
+	for _, v := range all {
+		for id, data := range v {
+			output += fmt.Sprintf("Ответ: %d<br>\n", id)
+			for element, mass := range data {
+				output += fmt.Sprintf("%s: %.4f г/литр<br>\n", element, mass)
+			}
+		}
+	}
+
+	// Устанавливаем правильный Content-Type для HTML
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(output))
 }

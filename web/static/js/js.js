@@ -49,7 +49,9 @@ function deleteRecord() {
         if (xhr.readyState === 4) {
             if (xhr.status === 200) {
                 // Обновляем содержимое <div id="result"> с сообщением об успешном удалении
-                document.getElementById("result").innerHTML = "Запись успешно удалена.";
+                document.getElementById("result").innerHTML = xhr.responseText;
+                // После успешного удаления обновляем оставшиеся записи
+                fetchUpdatedData();
             } else {
                 // Обработка ошибок, если необходимо
                 console.error("Ошибка при выполнении запроса:", xhr.status);
@@ -60,3 +62,22 @@ function deleteRecord() {
     xhr.send();
 }
 
+// Функция для запроса обновленных данных и их отображения
+function fetchUpdatedData() {
+    fetch("/updated-data")
+        .then(response => response.json())
+        .then(data => {
+            // Обновляем содержимое <div id="result"> с новыми данными
+            const resultDiv = document.getElementById("result");
+            resultDiv.innerHTML = ""; // Очищаем текущее содержимое
+            for (const record of data) {
+                // Создаем элементы для отображения данных и добавляем их в resultDiv
+                const recordElement = document.createElement("div");
+                recordElement.textContent = `ID: ${record.id}, Элемент: ${record.element}, Масса: ${record.mass} г/литр`;
+                resultDiv.appendChild(recordElement);
+            }
+        })
+        .catch(error => {
+            console.error("Ошибка при получении обновленных данных:", error);
+        });
+}
