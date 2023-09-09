@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"udo_mass/pkg/calculator"
 	"udo_mass/pkg/logger"
 	"udo_mass/pkg/storage"
@@ -34,6 +35,18 @@ func Home(w http.ResponseWriter, r *http.Request) {
 	w.Write(content)
 }
 
+// MultiError - это тип, из среза ошибок.
+type MultiError []error
+
+// Метод Error для MultiError формирует строку, содержащую все ошибки, разделенные точкой с запятой.
+func (me MultiError) Error() string {
+	var errStrs []string
+	for _, err := range me {
+		errStrs = append(errStrs, err.Error())
+	}
+	return strings.Join(errStrs, "; ")
+}
+
 // CalculateMolarMasses обрабатывает POST запросы для вычисления молекулярных масс химических соединений.
 func CalculateMolarMasses(w http.ResponseWriter, r *http.Request, db storage.Database) {
 	if r.URL.Path != "/" {
@@ -51,10 +64,55 @@ func CalculateMolarMasses(w http.ResponseWriter, r *http.Request, db storage.Dat
 		return
 	}
 
-	n := calculator.CombineChemicalFormulas(f.Nitrate, f.NitrateMass)
-	p := calculator.CombineChemicalFormulas(f.Phosphate, f.PhosphateMass)
-	k := calculator.CombineChemicalFormulas(f.Potassium, f.PotassiumMass)
-	ir := calculator.CombineChemicalFormulas(f.Micro, f.MicroMass)
+	n := make(map[string]float64)
+	p := make(map[string]float64)
+	k := make(map[string]float64)
+	ir := make(map[string]float64)
+	// Канал ошибок из горутин
+	errorCh := make(chan error)
+
+	// Канал для передачи результатов из горутин в основной поток
+	ch := make(chan map[string]float64)
+
+	// MultiError для сбора ошибок из горутин
+	var errors MultiError
+
+	go func() {
+		result := calculator.CombineChemicalFormulas(f.Nitrate, f.NitrateMass)
+		ch <- result
+	}()
+	go func() {
+		result := calculator.CombineChemicalFormulas(f.Phosphate, f.PhosphateMass)
+		ch <- result
+	}()
+	go func() {
+		result := calculator.CombineChemicalFormulas(f.Potassium, f.PotassiumMass)
+		ch <- result
+	}()
+	go func() {
+		result := calculator.CombineChemicalFormulas(f.Micro, f.MicroMass)
+		ch <- result
+	}()
+
+	// Принимает результаты из горутин и собираем в соответствующие мапы
+	for i := 0; i < 4; i++ {
+		select {
+		case result := <-ch:
+			switch i {
+			case 0:
+				n = result
+			case 1:
+				p = result
+			case 2:
+				k = result
+			case 3:
+				ir = result
+			}
+		case err := <-errorCh:
+			errors = append(errors, err)
+		}
+	}
+	close(ch)
 
 	response := calculator.CombineMaps(n, p, k, ir)
 	fmt.Println("------------------------------------")
