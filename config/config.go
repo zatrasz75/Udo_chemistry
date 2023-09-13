@@ -28,6 +28,7 @@ type Database struct {
 	Host     string // postgres
 	User     string // postgres
 	Password string // postgrespw
+	Url      string // localhost
 	Name     string // Account
 	Port     string // 49153
 }
@@ -124,14 +125,16 @@ func initDb() string {
 				Host:     viper.GetString("HOST_DB"),
 				User:     viper.GetString("USER_DB"),
 				Password: viper.GetString("PASSWORD_DB"),
+				Url:      viper.GetString("URL_DB"),
 				Name:     viper.GetString("NAME_DB"),
 				Port:     viper.GetString("PORT_DB"),
 			},
 		}
 		connStr = fmt.Sprintf(
-			"%s://%s:%s@localhost:%s/%s",
-			c.Database.Host, c.Database.User, c.Database.Password, c.Database.Port, c.Database.Name,
+			"%s://%s:%s@%s:%s/%s",
+			c.Database.Host, c.Database.User, c.Database.Password, c.Database.Url, c.Database.Port, c.Database.Name,
 		)
 	}
+	fmt.Println(connStr)
 	return connStr
 }
