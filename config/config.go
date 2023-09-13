@@ -135,6 +135,5 @@ func initDb() string {
 			c.Database.Host, c.Database.User, c.Database.Password, c.Database.Url, c.Database.Port, c.Database.Name,
 		)
 	}
-	fmt.Println(connStr)
 	return connStr
 }
