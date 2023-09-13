@@ -131,7 +131,7 @@ func initDb() string {
 			},
 		}
 		connStr = fmt.Sprintf(
-			"%s://%s:%s@%s:%s/%s",
+			"%s://%s:%s@%s:%s/%s?sslmode=disable",
 			c.Database.Host, c.Database.User, c.Database.Password, c.Database.Url, c.Database.Port, c.Database.Name,
 		)
 	}

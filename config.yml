@@ -7,7 +7,7 @@ IDLE_TIMEOUT: "60"
 
 SHUTDOWN_TIMEOUT: "30"
 
-#DB_POSTGRES_URL: "postgres://postgres:postgrespw@localhost:49153/Account"
+#DB_POSTGRES_URL: "postgres://postgres:postgrespw@localhost:49153/Account?sslmode=disable"
 HOST_DB: "postgres"
 USER_DB: "postgres"
 PASSWORD_DB: "postgrespw"
