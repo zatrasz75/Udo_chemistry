@@ -210,7 +210,7 @@ func molarMassCompound(charCount map[string]int) map[string]float64 {
 
 // TotalMassOfTheSubstance Подсчитывает массу в зависимости от внесенного вещества в граммах
 func totalMassOfTheSubstance(substance map[string]float64, mass string) map[string]float64 {
-	m, _ := strconv.Atoi(mass)
+	m, _ := strconv.ParseFloat(mass, 64)
 	var total float64
 	result := make(map[string]float64)
 
