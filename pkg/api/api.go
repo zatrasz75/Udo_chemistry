@@ -46,10 +46,17 @@ func New() *API {
 	if err != nil {
 		logger.Fatal("не удалось удалить таблицу", err)
 	}
+	err = db.DropSessionTable()
+	if err != nil {
+		logger.Fatal("не удалось удалить таблицу", err)
+	}
+	err = db.CreatSessionTable()
+	if err != nil {
+		logger.Fatal("не удалось создать таблицу session_token", err)
+	}
 	err = db.CreatMolarMassTable()
 	if err != nil {
 		logger.Fatal("не удалось создать таблицу molar_mass_data", err)
-		return nil
 	}
 
 	// Создаём новый API и привязываем к нему маршрутизатор и корневую директорию для веб-приложения.
@@ -131,7 +138,10 @@ func shutdownServer(httpServer *API) error {
 
 // Регистрация обработчиков API.
 func (api *API) endpoints() {
-	api.r.HandleFunc("/", handlers.Home).Methods(http.MethodGet)
+
+	api.r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		handlers.Home(w, r, api.GetDB())
+	}).Methods(http.MethodGet)
 
 	api.r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handlers.CalculateMolarMasses(w, r, api.GetDB())

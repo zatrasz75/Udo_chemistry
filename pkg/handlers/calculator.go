@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -13,14 +15,66 @@ import (
 	"udo_mass/pkg/storage"
 )
 
+// Генерируем уникальный токен
+func generateSessionToken() (string, error) {
+	// Создайте буфер для хранения случайных байтов
+	key := make([]byte, 64)
+
+	// Сгенерируйте случайные байты
+	_, err := rand.Read(key)
+	if err != nil {
+		return "", err
+	}
+	// Конвертируйте байты в строку base64
+	keyStr := base64.StdEncoding.EncodeToString(key)
+
+	return keyStr, nil
+}
+
+// Проверяет на уникальность сгенерированный токен и если не уникальный,
+// то генерирует заново.
+func generateUniqueSessionToken(db storage.Database) (string, error) {
+	// Генерируем новый уникальный токен
+	token, err := generateSessionToken()
+	if err != nil {
+		return "", err
+	}
+	id, err := db.GetSessionTokenID(token)
+	if err != nil {
+		return token, err
+	}
+	if id > 0 {
+		// Токен уже существует, генерируем новый уникальный токен
+		return generateUniqueSessionToken(db)
+	}
+
+	return token, err
+}
+
 // Home обрабатывает GET запросы на корневой путь и отправляет содержимое HTML файла "udo.html".
-func Home(w http.ResponseWriter, r *http.Request) {
+func Home(w http.ResponseWriter, r *http.Request, db storage.Database) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 	}
 	if r.Method != http.MethodGet {
 		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 	}
+
+	// Генерируем уникальный идентификатор сессии
+	token, err := generateUniqueSessionToken(db)
+	if err != nil {
+		logger.Info("Новый Идентификатор сессии")
+	}
+
+	sessionCookie := &http.Cookie{
+		Name:     "session",
+		Value:    token,
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   3600, // 3600 Устанавливает время жизни куки на 1 час
+	}
+	http.SetCookie(w, sessionCookie)
 
 	content, err := ioutil.ReadFile("web/html/udo.html")
 	if err != nil {
@@ -56,8 +110,35 @@ func CalculateMolarMasses(w http.ResponseWriter, r *http.Request, db storage.Dat
 		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 	}
 
+	var sessionID int
+	sessionCookie, err := r.Cookie("session")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			// Куки не найдено
+			logger.Error("Куки 'session' не найдено.", err)
+			http.Redirect(w, r, "/", http.StatusOK)
+			http.Error(w, "Ваша сессия закончилась. Обновите страницу.", http.StatusUnauthorized)
+			return
+		} else {
+			// Другая ошибка
+			logger.Error("Ошибка при получении куки:", err)
+			http.Redirect(w, r, "/", http.StatusOK)
+			http.Error(w, "Произошла ошибка при проверке сессии. Обновите страницу.", http.StatusInternalServerError)
+			return
+		}
+	}
+	token := sessionCookie.Value
+	sessionID, err = db.GetSessionTokenID(token)
+	if err != nil {
+		logger.Info("Новый Идентификатор")
+		sessionID, err = db.AddSessionToken(token)
+		if err != nil {
+			logger.Error("Ошибка при вставке записи Идентификатора", err)
+		}
+	}
+
 	var f storage.MolarMasses
-	err := json.NewDecoder(r.Body).Decode(&f)
+	err = json.NewDecoder(r.Body).Decode(&f)
 	if err != nil {
 		http.Error(w, "Ошибка декодирования JSON", http.StatusBadRequest)
 		logger.Error("Ошибка декодирования JSON", err)
@@ -122,13 +203,13 @@ func CalculateMolarMasses(w http.ResponseWriter, r *http.Request, db storage.Dat
 	}
 
 	if len(response) != 0 {
-		err = db.AddMolarMass(response)
+		err = db.AddMolarMass(response, sessionID)
 		if err != nil {
 			logger.Error("ошибка при вставке данных в базу данных:", err)
 		}
 	}
 
-	all, err := db.AllMolarMass()
+	all, err := db.AllMolarMass(sessionID)
 	if err != nil {
 		http.Error(w, "не получилось получить данные из таблицы", http.StatusInternalServerError)
 		logger.Error("не получилось получить данные из таблицы", err)
@@ -159,6 +240,33 @@ func DelRecord(w http.ResponseWriter, r *http.Request, db storage.Database) {
 		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 	}
 
+	var sessionID int
+	sessionCookie, err := r.Cookie("session")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			// Куки не найдено
+			logger.Error("Куки 'session' не найдено.", err)
+			http.Redirect(w, r, "/", http.StatusOK)
+			http.Error(w, "Ваша сессия закончилась. Обновите страницу.", http.StatusUnauthorized)
+			return
+		} else {
+			// Другая ошибка
+			logger.Error("Ошибка при получении куки:", err)
+			http.Redirect(w, r, "/", http.StatusOK)
+			http.Error(w, "Произошла ошибка при проверке сессии. Обновите страницу.", http.StatusInternalServerError)
+			return
+		}
+	}
+	token := sessionCookie.Value
+	sessionID, err = db.GetSessionTokenID(token)
+	if err != nil {
+		logger.Info("Новый Идентификатор")
+		sessionID, err = db.AddSessionToken(token)
+		if err != nil {
+			logger.Error("Ошибка при вставке записи Идентификатора", err)
+		}
+	}
+
 	// Получаем id записи, которую нужно удалить, из запроса
 	idStr := r.FormValue("id")
 	id, err := strconv.Atoi(idStr)
@@ -169,7 +277,7 @@ func DelRecord(w http.ResponseWriter, r *http.Request, db storage.Database) {
 	}
 
 	// Проверяем, есть такая запись
-	exists, err := db.SearchRecordById(id)
+	exists, err := db.SearchRecordById(id, sessionID)
 	if err != nil {
 		// Обработка ошибки, если она возникла при поиске записи
 		http.Error(w, "Ошибка при поиске записи", http.StatusInternalServerError)
@@ -184,7 +292,7 @@ func DelRecord(w http.ResponseWriter, r *http.Request, db storage.Database) {
 	}
 
 	// Удалить запись по id
-	deleted, err := db.DelRecord(id)
+	deleted, err := db.DelRecord(id, sessionID)
 	if err != nil {
 		http.Error(w, "Ошибка при удалении записи", http.StatusInternalServerError)
 		logger.Error("Ошибка при удалении записи", err)
@@ -196,10 +304,18 @@ func DelRecord(w http.ResponseWriter, r *http.Request, db storage.Database) {
 		logger.Error("Запись с указанным id не найдена", err)
 		return
 	} else {
+		// Проверяем, есть такая запись
+		exists, err = db.SearchRecordById(id, sessionID)
+		if err != nil {
+			// Обработка ошибки, если она возникла при поиске записи
+			http.Error(w, "Ошибка при поиске записи", http.StatusInternalServerError)
+			logger.Error("Ошибка при поиске записи", err)
+			return
+		}
 		logger.Info("Запись удалена id %s", idStr)
 	}
 
-	all, err := db.AllMolarMass()
+	all, err := db.AllMolarMass(sessionID)
 	if err != nil {
 		http.Error(w, "не получилось получить данные из таблицы", http.StatusInternalServerError)
 		logger.Error("не получилось получить данные из таблицы", err)

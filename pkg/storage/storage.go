@@ -13,9 +13,13 @@ type MolarMasses struct {
 
 type Database interface {
 	CreatMolarMassTable() error
+	CreatSessionTable() error
 	DropMolarMassTable() error
-	AddMolarMass(c map[string]float64) error
-	AllMolarMass() ([]map[int]map[string]float64, error)
-	DelRecord(id int) (bool, error)
-	SearchRecordById(id int) (bool, error)
+	DropSessionTable() error
+	AddMolarMass(c map[string]float64, id int) error
+	AllMolarMass(int) ([]map[int]map[string]float64, error)
+	DelRecord(id int, sessionID int) (bool, error)
+	SearchRecordById(id int, sessionID int) (bool, error)
+	GetSessionTokenID(token string) (int, error)
+	AddSessionToken(token string) (int, error)
 }
