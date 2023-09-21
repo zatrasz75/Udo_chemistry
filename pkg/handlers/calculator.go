@@ -272,7 +272,7 @@ func DelRecord(w http.ResponseWriter, r *http.Request, db storage.Database) {
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "Неверный формат id", http.StatusBadRequest)
-		logger.Error("Неверный формат id", err)
+		logger.Debug("Неверный формат id %s", err)
 		return
 	}
 

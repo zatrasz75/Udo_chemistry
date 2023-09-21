@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"crypto/tls"
 	"github.com/gorilla/mux"
 	"net/http"
 	"os"
@@ -77,17 +78,30 @@ func (api *API) Start() error {
 	// Конфигурация
 	cfg := config.New()
 
+	// Загрузка сертификата и ключа
+	cert, err := tls.LoadX509KeyPair(cfg.Server.AddrCert, cfg.Server.AddrKey)
+	if err != nil {
+		return err
+	}
+
+	// Создание TLS конфигурации с возможностью ввода паролей
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		MinVersion:   tls.VersionTLS12,
+	}
+
 	api.srv = &http.Server{
 		Addr:         api.host + ":" + api.port,
 		Handler:      api.r,
+		TLSConfig:    tlsConfig,
 		ReadTimeout:  cfg.Server.ReadTimeout,
 		WriteTimeout: cfg.Server.WriteTimeout,
 		IdleTimeout:  cfg.Server.IdleTimeout,
 	}
-	logger.Info("Запуск сервера на http://" + api.srv.Addr)
+	logger.Info("Запуск сервера на https://" + api.srv.Addr)
 
 	go func() {
-		err := api.srv.ListenAndServe()
+		err = api.srv.ListenAndServeTLS("", "")
 		if err != nil {
 			logger.Error("Остановка сервера", err)
 			return

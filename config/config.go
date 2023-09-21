@@ -16,6 +16,8 @@ type Config struct {
 type Server struct {
 	AddrPort     string
 	AddrHost     string
+	AddrCert     string
+	AddrKey      string
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	IdleTimeout  time.Duration
@@ -47,6 +49,14 @@ func New() *Config {
 	addrHost := os.Getenv("APP_HOST")
 	if addrHost == "" {
 		addrHost = viper.GetString("APP_HOST")
+	}
+	addrCert := os.Getenv("APP_CERT_PEM")
+	if addrCert == "" {
+		addrCert = viper.GetString("APP_CERT_PEM")
+	}
+	addrKey := os.Getenv("APP_KEY_PEM")
+	if addrKey == "" {
+		addrKey = viper.GetString("APP_KEY_PEM")
 	}
 
 	readTimeoutStr := os.Getenv("READ_TIMEOUT")
@@ -101,6 +111,8 @@ func New() *Config {
 		Server: Server{
 			AddrPort:     addrPOrt,
 			AddrHost:     addrHost,
+			AddrCert:     addrCert,
+			AddrKey:      addrKey,
 			ReadTimeout:  readTimeout,
 			WriteTimeout: writeTimeout,
 			IdleTimeout:  idleTimeout,
