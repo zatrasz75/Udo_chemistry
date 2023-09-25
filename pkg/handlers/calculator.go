@@ -15,6 +15,11 @@ import (
 	"udo_mass/pkg/storage"
 )
 
+type Server struct {
+	Server *http.Server
+	Db     storage.Database
+}
+
 // Генерируем уникальный токен
 func generateSessionToken() (string, error) {
 	// Создайте буфер для хранения случайных байтов
@@ -52,7 +57,7 @@ func generateUniqueSessionToken(db storage.Database) (string, error) {
 }
 
 // Home обрабатывает GET запросы на корневой путь и отправляет содержимое HTML файла "udo.html".
-func Home(w http.ResponseWriter, r *http.Request, db storage.Database) {
+func (s *Server) Home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 	}
@@ -61,7 +66,7 @@ func Home(w http.ResponseWriter, r *http.Request, db storage.Database) {
 	}
 
 	// Генерируем уникальный идентификатор сессии
-	token, err := generateUniqueSessionToken(db)
+	token, err := generateUniqueSessionToken(s.Db)
 	if err != nil {
 		logger.Info("Новый Идентификатор сессии")
 	}
@@ -102,7 +107,7 @@ func (me MultiError) Error() string {
 }
 
 // CalculateMolarMasses обрабатывает POST запросы для вычисления молекулярных масс химических соединений.
-func CalculateMolarMasses(w http.ResponseWriter, r *http.Request, db storage.Database) {
+func (s *Server) CalculateMolarMasses(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 	}
@@ -128,10 +133,10 @@ func CalculateMolarMasses(w http.ResponseWriter, r *http.Request, db storage.Dat
 		}
 	}
 	token := sessionCookie.Value
-	sessionID, err = db.GetSessionTokenID(token)
+	sessionID, err = s.Db.GetSessionTokenID(token)
 	if err != nil {
 		logger.Info("Новый Идентификатор")
-		sessionID, err = db.AddSessionToken(token)
+		sessionID, err = s.Db.AddSessionToken(token)
 		if err != nil {
 			logger.Error("Ошибка при вставке записи Идентификатора", err)
 		}
@@ -203,13 +208,13 @@ func CalculateMolarMasses(w http.ResponseWriter, r *http.Request, db storage.Dat
 	}
 
 	if len(response) != 0 {
-		err = db.AddMolarMass(response, sessionID)
+		err = s.Db.AddMolarMass(response, sessionID)
 		if err != nil {
 			logger.Error("ошибка при вставке данных в базу данных:", err)
 		}
 	}
 
-	all, err := db.AllMolarMass(sessionID)
+	all, err := s.Db.AllMolarMass(sessionID)
 	if err != nil {
 		http.Error(w, "не получилось получить данные из таблицы", http.StatusInternalServerError)
 		logger.Error("не получилось получить данные из таблицы", err)
@@ -232,7 +237,7 @@ func CalculateMolarMasses(w http.ResponseWriter, r *http.Request, db storage.Dat
 }
 
 // DelRecord обрабатывает POST запрос и удаляет запись в базе данных по её id
-func DelRecord(w http.ResponseWriter, r *http.Request, db storage.Database) {
+func (s *Server) DelRecord(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/delet" {
 		http.NotFound(w, r)
 	}
@@ -258,10 +263,10 @@ func DelRecord(w http.ResponseWriter, r *http.Request, db storage.Database) {
 		}
 	}
 	token := sessionCookie.Value
-	sessionID, err = db.GetSessionTokenID(token)
+	sessionID, err = s.Db.GetSessionTokenID(token)
 	if err != nil {
 		logger.Info("Новый Идентификатор")
-		sessionID, err = db.AddSessionToken(token)
+		sessionID, err = s.Db.AddSessionToken(token)
 		if err != nil {
 			logger.Error("Ошибка при вставке записи Идентификатора", err)
 		}
@@ -277,7 +282,7 @@ func DelRecord(w http.ResponseWriter, r *http.Request, db storage.Database) {
 	}
 
 	// Проверяем, есть такая запись
-	exists, err := db.SearchRecordById(id, sessionID)
+	exists, err := s.Db.SearchRecordById(id, sessionID)
 	if err != nil {
 		// Обработка ошибки, если она возникла при поиске записи
 		http.Error(w, "Ошибка при поиске записи", http.StatusInternalServerError)
@@ -287,12 +292,12 @@ func DelRecord(w http.ResponseWriter, r *http.Request, db storage.Database) {
 	if !exists {
 		// Запись с указанным id не существует
 		http.Error(w, "Запись с указанным id не найдена", http.StatusNotFound)
-		logger.Info("Запись с указанным id не найдена %s", idStr)
+		logger.Debug("Запись с указанным id не найдена %s", idStr)
 		return
 	}
 
 	// Удалить запись по id
-	deleted, err := db.DelRecord(id, sessionID)
+	deleted, err := s.Db.DelRecord(id, sessionID)
 	if err != nil {
 		http.Error(w, "Ошибка при удалении записи", http.StatusInternalServerError)
 		logger.Error("Ошибка при удалении записи", err)
@@ -305,7 +310,7 @@ func DelRecord(w http.ResponseWriter, r *http.Request, db storage.Database) {
 		return
 	} else {
 		// Проверяем, есть такая запись
-		exists, err = db.SearchRecordById(id, sessionID)
+		exists, err = s.Db.SearchRecordById(id, sessionID)
 		if err != nil {
 			// Обработка ошибки, если она возникла при поиске записи
 			http.Error(w, "Ошибка при поиске записи", http.StatusInternalServerError)
@@ -315,7 +320,7 @@ func DelRecord(w http.ResponseWriter, r *http.Request, db storage.Database) {
 		logger.Info("Запись удалена id %s", idStr)
 	}
 
-	all, err := db.AllMolarMass(sessionID)
+	all, err := s.Db.AllMolarMass(sessionID)
 	if err != nil {
 		http.Error(w, "не получилось получить данные из таблицы", http.StatusInternalServerError)
 		logger.Error("не получилось получить данные из таблицы", err)
